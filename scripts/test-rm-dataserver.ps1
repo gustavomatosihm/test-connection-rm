@@ -131,9 +131,11 @@ if ($RetryCount -eq 0) {
     $RetryCount = [int](Get-PropertyValue -Object $config -Name 'RetryCount' -Default 2)
 }
 
-$finalUrl = $serverUrl.TrimEnd('/') + '/' + $dataServer.Trim('/')
 if (-not [string]::IsNullOrWhiteSpace($RelativePath)) {
-    $finalUrl = $finalUrl + '/' + $RelativePath.Trim('/')
+    $finalUrl = $serverUrl.TrimEnd('/') + '/' + $RelativePath.Trim('/')
+}
+else {
+    $finalUrl = $serverUrl.TrimEnd('/') + '/' + $dataServer.Trim('/')
 }
 
 $headers = @{}

@@ -27,25 +27,44 @@ Problemas de comunicação com serviços do Totvs RM podem se manifestar como qu
 
 Para testar conectividade em diferentes ambientes sem alterar o código, use o script de diagnóstico em `scripts/test-rm-dataserver.ps1` combinado com um arquivo de configuração local.
 
+### Observação importante sobre o endpoint
+
+Os DataServers RM normalmente não são consumidos como `GET` direto em `http://servidor:8054/PrjIsmData`. A arquitetura documentada pela TOTVS expõe o WebService do RM por meio do Host, geralmente na porta HTTP do Host (ex.: `8051`) e via SOAP/XML com autenticação Basic. O endpoint do servidor de aplicação (`8054`) pode ser um serviço diferente e não o WS do DataServer em si.
+
 ### 1) Configuração
 
-Ajuste `scripts/rm.config.json` ou crie `scripts/rm.config.local.json` com o endereço do servidor de aplicação e o Dataserver de teste:
+Ajuste `scripts/rm.config.json` ou crie `scripts/rm.config.local.json` com a URL do Host e o payload SOAP de teste:
 
 ```json
 {
-  "ApplicationServerUrl": "http://srvbhz16:8054",
+  "ApplicationServerUrl": "http://srvbhz16:8051",
   "DataServer": "PrjIsmData",
-  "HttpMethod": "GET",
-  "RelativePath": "",
+  "HttpMethod": "POST",
+  "RelativePath": "wsDataServer",
   "TimeoutSeconds": 30,
   "RetryCount": 2,
+  "SoapAction": "",
+  "ContentType": "text/xml; charset=utf-8",
   "Authentication": {
     "Type": "Basic",
     "Username": "CHANGE_ME",
     "CredentialFile": ".\\rm.credentials.json"
-  }
+  },
+  "RequestBody": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><ReadRecord xmlns=\"http://tempuri.org/\"><DataServer>PrjIsmData</DataServer><Context></Context><Key></Key></ReadRecord></soap:Body></soap:Envelope>"
 }
 ```
+
+### Validação no navegador
+
+Antes de chamar o serviço pelo script, teste no navegador estas URLs do Host:
+
+- `http://srvbhz16:8051/wsPageIndex`
+- `http://srvbhz16:8051/wsDataServer`
+- `http://srvbhz16:8051/wsDataServer/MEX?wsdl`
+
+Se a URL `wsDataServer`/`MEX?wsdl` responder corretamente, significa que o Host está publicando o WebService do RM na porta `8051` e o script deve ser executado nesse endpoint, não em `http://srvbhz16:8054/PrjIsmData`.
+
+> Em ambientes reais, o valor exato do `RelativePath` e do `SoapAction` depende do WSDL publicado pelo Host. O ajuste pode ser necessário para a rota exata do serviço exposto (por exemplo, `wsPageIndex`, `wsDataServer` ou `wsReport`).
 
 ### 2) Guardar credencial criptografada
 

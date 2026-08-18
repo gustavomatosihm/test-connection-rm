@@ -1,0 +1,10 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tem:ReadRecord>
+      <tem:DataServer>PrjIsmData</tem:DataServer>
+      <tem:Context></tem:Context>
+      <tem:Key></tem:Key>
+    </tem:ReadRecord>
+  </soapenv:Body>
+</soapenv:Envelope>

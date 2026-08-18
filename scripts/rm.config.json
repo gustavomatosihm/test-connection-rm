@@ -1,17 +1,19 @@
 {
-  "ApplicationServerUrl": "http://srvbhz16:8054",
+  "ApplicationServerUrl": "http://srvbhz16:8051",
   "DataServer": "PrjIsmData",
-  "HttpMethod": "GET",
-  "RelativePath": "",
+  "HttpMethod": "POST",
+  "RelativePath": "wsDataServer",
   "TimeoutSeconds": 30,
   "RetryCount": 2,
+  "SoapAction": "",
+  "ContentType": "text/xml; charset=utf-8",
   "Headers": [
-    { "Name": "Accept", "Value": "application/json" }
+    { "Name": "Accept", "Value": "text/xml" }
   ],
   "Authentication": {
     "Type": "Basic",
     "Username": "CHANGE_ME",
     "CredentialFile": ".\\rm.credentials.json"
   },
-  "RequestBody": ""
+  "RequestBody": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><ReadRecord xmlns=\"http://tempuri.org/\"><DataServer>PrjIsmData</DataServer><Context></Context><Key></Key></ReadRecord></soap:Body></soap:Envelope>"
 }
