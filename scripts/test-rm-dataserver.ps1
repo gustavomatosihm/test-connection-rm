@@ -1,6 +1,8 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$ConfigFile = "",
+    [ValidateSet("ReadRecord","SaveRecord","DeleteRecord","DeleteRecordByKey")]
+    [string]$Operation = "ReadRecord",
     [string]$CredentialFile = "",
     [string]$RelativePath = "",
     [string]$Method = "",
@@ -72,6 +74,94 @@ function Get-PropertyValue {
 
     return $Default
 }
+function Escape-XmlValue {
+    param([string]$Value)
+    return [System.Security.SecurityElement]::Escape($Value)
+}
+
+function Convert-ReadRecordToSaveRecordBody {
+    param([string]$XmlText)
+
+    $escaped = Escape-XmlValue -Value $XmlText
+    $inner = @"
+<PrjIsm>
+  <MIsm>
+    <CODCOLIGADA>1</CODCOLIGADA>
+    <IDPRJ>27056</IDPRJ>
+    <IDISM>4875985</IDISM>
+    <CODISM>015.0400.00001</CODISM>
+    <DESCISM>SERVIÇOS PRESTADOS POR TERCEIROS</DESCISM>
+    <CODUND>UN</CODUND>
+    <GRUPODNER>C</GRUPODNER>
+    <IDGIS>47161</IDGIS>
+    <IDISMPRC>2358368</IDISMPRC>
+    <VALOR>0.0000</VALOR>
+    <VALORSEMLEIS>0.0000</VALORSEMLEIS>
+    <VALORIMPRODUTIVO>0.0000</VALORIMPRODUTIVO>
+    <CODAPLIC>M</CODAPLIC>
+    <FATORK>1.0000</FATORK>
+    <FLAGFRACIONARIO>0</FLAGFRACIONARIO>
+    <JORNADA>0.00</JORNADA>
+    <GRUPODNERGIS>C</GRUPODNERGIS>
+    <PRAZORESSUP>0</PRAZORESSUP>
+    <DESCRICAOCOMPLETA>SERVIÇOS PRESTADOS POR TERCEIROS</DESCRICAOCOMPLETA>
+    <MINIMOHORAEXTRA>0.0000</MINIMOHORAEXTRA>
+    <APLICFORMULA>M</APLICFORMULA>
+    <TIPOISMDERIVADO>0</TIPOISMDERIVADO>
+    <TIPO>0</TIPO>
+    <PRIORIDADECALC>0</PRIORIDADECALC>
+    <MAXIMOHORAEXTRA>0.0000</MAXIMOHORAEXTRA>
+    <CUSTOUNITHORAEXTRA>0.0000</CUSTOUNITHORAEXTRA>
+    <JORNADAPERIODO>0.00</JORNADAPERIODO>
+    <ISMDETALHADO>0</ISMDETALHADO>
+    <UTILIZADETISMCNT>0</UTILIZADETISMCNT>
+    <CODCOLIGADA1>1</CODCOLIGADA1>
+    <IDPRJ1>27056</IDPRJ1>
+    <IDISM1>4875985</IDISM1>
+    <Icone>7</Icone>
+  </MIsm>
+  <MISMCOMPL>
+    <CODCOLIGADA>1</CODCOLIGADA>
+    <IDPRJ>27056</IDPRJ>
+    <IDISM>4875985</IDISM>
+    <RECCREATEDBY>emanuelle.nunes</RECCREATEDBY>
+    <RECCREATEDON>2013-08-29T08:46:51</RECCREATEDON>
+    <RECMODIFIEDBY>mestre</RECMODIFIEDBY>
+    <RECMODIFIEDON>2023-04-14T14:31:56</RECMODIFIEDON>
+  </MISMCOMPL>
+  <MISMPRD>
+    <CODCOLIGADA>1</CODCOLIGADA>
+    <IDPRJ>27056</IDPRJ>
+    <IDISM>4875985</IDISM>
+    <IDPRD>8210</IDPRD>
+    <PRINCIPAL>1</PRINCIPAL>
+    <CODIGOPRD>015.0400.00001</CODIGOPRD>
+    <NOMEFANTASIA>NÃO UTILIZAR - SERVIÇOS PRESTADOS POR TERCEIROS</NOMEFANTASIA>
+    <DESCRICAO>SERVIÇOS PRESTADOS POR TERCEIROS</DESCRICAO>
+    <CODUNDCONTROLE>UN</CODUNDCONTROLE>
+    <CODFAB>015.0400.00001</CODFAB>
+    <INATIVO>0</INATIVO>
+    <Icone>1</Icone>
+  </MISMPRD>
+  <MISMDESC>
+    <CODCOLIGADA>1</CODCOLIGADA>
+    <IDPRJ>27056</IDPRJ>
+    <IDISM>4875985</IDISM>
+    <DESCRICAOCOMPLETA>SERVIÇOS PRESTADOS POR TERCEIROS</DESCRICAOCOMPLETA>
+  </MISMDESC>
+</PrjIsm>
+"@
+    return '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://www.totvs.com/"><soapenv:Header/><soapenv:Body><tem:SaveRecord><tem:DataServerName>PrjIsmData</tem:DataServerName><tem:XML>' + $escaped + '</tem:XML><tem:Contexto></tem:Contexto></tem:SaveRecord></soapenv:Body></soapenv:Envelope>'
+}
+function Get-DefaultSoapAction {
+    param([string]$Op)
+    switch ($Op) {
+        'SaveRecord' { 'http://www.totvs.com/IwsDataServer/SaveRecord' }
+        'DeleteRecord' { 'http://www.totvs.com/IwsDataServer/DeleteRecord' }
+        'DeleteRecordByKey' { 'http://www.totvs.com/IwsDataServer/DeleteRecordByKey' }
+        default { 'http://www.totvs.com/IwsDataServer/ReadRecord' }
+    }
+}
 
 if (-not $ConfigFile) {
     $localConfig = Join-Path $PSScriptRoot 'rm.config.local.json'
@@ -83,7 +173,7 @@ if (-not $ConfigFile) {
         $ConfigFile = $defaultConfig
     }
     else {
-        throw "Arquivo de configuração não encontrado. Crie rm.config.json ou rm.config.local.json."
+        throw 'Arquivo de configuração não encontrado. Crie rm.config.json ou rm.config.local.json.'
     }
 }
 
@@ -92,27 +182,20 @@ if (-not (Test-Path $ConfigFile)) {
 }
 
 $config = Get-Content -Raw -Path $ConfigFile | ConvertFrom-Json
-$serverUrl = Get-PropertyValue -Object $config -Name 'ApplicationServerUrl' -Default (Get-PropertyValue -Object $config -Name 'ServerUrl')
-if (-not $serverUrl) { throw 'Configuração sem ApplicationServerUrl/ServerUrl.' }
-
-$dataServer = Get-PropertyValue -Object $config -Name 'DataServer' -Default (Get-PropertyValue -Object $config -Name 'DataSource')
-if (-not $dataServer) { throw 'Configuração sem DataServer/DataSource.' }
+$serverUrl = if ($config.ApplicationServerUrl) { $config.ApplicationServerUrl } elseif ($config.ServerUrl) { $config.ServerUrl } else { throw 'Configuração sem ApplicationServerUrl/ServerUrl.' }
+$dataServer = if ($config.DataServer) { $config.DataServer } elseif ($config.DataSource) { $config.DataSource } else { throw 'Configuração sem DataServer/DataSource.' }
 
 if (-not $CredentialFile) {
-    $authConfig = Get-PropertyValue -Object $config -Name 'Authentication'
-    if ($authConfig) {
-        $credentialPath = Get-PropertyValue -Object $authConfig -Name 'CredentialFile'
-        if ($credentialPath) {
-            $CredentialFile = Resolve-PathFromBase -Path $credentialPath -BasePath (Split-Path -Parent $ConfigFile)
-        }
+    if ($config.Authentication -and $config.Authentication.CredentialFile) {
+        $CredentialFile = Resolve-PathFromBase -Path $config.Authentication.CredentialFile -BasePath (Split-Path -Parent $ConfigFile)
     }
-    if (-not $CredentialFile -and (Test-Path (Join-Path $PSScriptRoot 'rm.credentials.json'))) {
+    elseif (Test-Path (Join-Path $PSScriptRoot 'rm.credentials.json')) {
         $CredentialFile = Join-Path $PSScriptRoot 'rm.credentials.json'
     }
 }
 
 if (-not $Method) {
-    $Method = Get-PropertyValue -Object $config -Name 'HttpMethod' -Default (Get-PropertyValue -Object $config -Name 'Method' -Default 'GET')
+    $Method = if ($config.HttpMethod) { $config.HttpMethod } elseif ($config.Method) { $config.Method } else { 'GET' }
 }
 
 if (-not $RelativePath) {
@@ -141,7 +224,7 @@ if ($RetryCount -eq 0) {
 $contentType = Get-PropertyValue -Object $config -Name 'ContentType' -Default 'text/xml; charset=utf-8'
 $soapAction = Get-PropertyValue -Object $config -Name 'SoapAction'
 if (-not $soapAction -and $Method -ne 'GET') {
-    $soapAction = 'http://www.totvs.com/IwsDataServer/ReadRecord'
+    $soapAction = Get-DefaultSoapAction -Op $Operation
 }
 
 if (-not [string]::IsNullOrWhiteSpace($RelativePath)) {
@@ -164,7 +247,7 @@ if (-not $headers.ContainsKey('Content-Type') -and -not $headers.ContainsKey('co
     $headers['Content-Type'] = $contentType
 }
 if ($soapAction) {
-    $headers['SOAPAction'] = $soapAction
+    $headers['SOAPAction'] = '"' + $soapAction + '"'
 }
 
 $authConfig = Get-PropertyValue -Object $config -Name 'Authentication'
@@ -196,6 +279,7 @@ if ($authConfig) {
 }
 
 $configSummary = [ordered]@{
+    Operation = $Operation
     ApplicationServerUrl = $serverUrl
     DataServer = $dataServer
     Url = $finalUrl
@@ -231,10 +315,11 @@ while ($attempt -le $RetryCount) {
         $samplesDir = Join-Path $PSScriptRoot '..\samples'
         New-Item -ItemType Directory -Path $samplesDir -Force | Out-Null
         $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-        $responseFile = Join-Path $samplesDir ("rm-response-$timestamp.txt")
+        $responseFile = Join-Path $samplesDir ("rm-response-$Operation-$timestamp.txt")
         $content | Set-Content -Path $responseFile -Encoding UTF8
 
         [pscustomobject]@{
+            Operation = $Operation
             Url = $finalUrl
             StatusCode = $response.StatusCode
             ElapsedMilliseconds = $stopwatch.ElapsedMilliseconds
@@ -246,28 +331,6 @@ while ($attempt -le $RetryCount) {
     }
     catch {
         $lastError = $_
-        $responseBody = $null
-        if ($lastError.Exception -and $lastError.Exception.Response) {
-            try {
-                $stream = $lastError.Exception.Response.GetResponseStream()
-                if ($stream) {
-                    $reader = New-Object System.IO.StreamReader($stream)
-                    $responseBody = $reader.ReadToEnd()
-                    $reader.Dispose()
-                }
-            }
-            catch {}
-        }
-
-        if ($responseBody) {
-            $samplesDir = Join-Path $PSScriptRoot '..\samples'
-            New-Item -ItemType Directory -Path $samplesDir -Force | Out-Null
-            $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-            $errorFile = Join-Path $samplesDir ("rm-error-$timestamp.txt")
-            $responseBody | Set-Content -Path $errorFile -Encoding UTF8
-            Write-Warning "Resposta do servidor salva em: $errorFile"
-        }
-
         if ($attempt -le $RetryCount) {
             Write-Warning "Tentativa $attempt/$($RetryCount + 1) falhou. Repetindo em 2 segundos..."
             Start-Sleep -Seconds 2
@@ -277,3 +340,5 @@ while ($attempt -le $RetryCount) {
         throw "Falha ao consultar Dataserver RM. Url: $finalUrl. Detalhes: $($lastError.Exception.Message)"
     }
 }
+
+
