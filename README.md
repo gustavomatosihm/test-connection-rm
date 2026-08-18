@@ -50,7 +50,7 @@ Ajuste `scripts/rm.config.json` ou crie `scripts/rm.config.local.json` com a URL
     "Username": "CHANGE_ME",
     "CredentialFile": ".\\rm.credentials.json"
   },
-  "RequestBody": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body><ReadRecord xmlns=\"http://tempuri.org/\"><DataServer>PrjIsmData</DataServer><Context></Context><Key></Key></ReadRecord></soap:Body></soap:Envelope>"
+  "RequestBody": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:tem=\"http://www.totvs.com/\"><soap:Body><tem:ReadRecord><tem:DataServerName>PrjIsmData</tem:DataServerName><tem:PrimaryKey>CHAVE_DO_REGISTRO</tem:PrimaryKey><tem:Contexto></tem:Contexto></tem:ReadRecord></soap:Body></soap:Envelope>"
 }
 ```
 
@@ -62,9 +62,17 @@ Antes de chamar o serviço pelo script, teste no navegador estas URLs do Host:
 - `http://srvbhz16:8051/wsDataServer`
 - `http://srvbhz16:8051/wsDataServer/MEX?wsdl`
 
-Se a URL `wsDataServer`/`MEX?wsdl` responder corretamente, significa que o Host está publicando o WebService do RM na porta `8051` e o script deve ser executado nesse endpoint, não em `http://srvbhz16:8054/PrjIsmData`.
+Se a URL `wsDataServer`/`MEX?wsdl` responder corretamente, significa que o Host está publicando o WebService do RM na porta `8051` e o script deve ser executado no endpoint SOAP exposto no WSDL, não em `http://srvbhz16:8054/PrjIsmData`.
 
-> Em ambientes reais, o valor exato do `RelativePath` e do `SoapAction` depende do WSDL publicado pelo Host. O ajuste pode ser necessário para a rota exata do serviço exposto (por exemplo, `wsPageIndex`, `wsDataServer` ou `wsReport`).
+O WSDL publicado pelo Host aponta para o endereço SOAP real:
+
+- `http://srvbhz16.ihm.local:8051/wsDataServer/IwsDataServer`
+
+Ou seja, o `RelativePath` correto para a chamada SOAP do Dataserver é:
+
+- `wsDataServer/IwsDataServer`
+
+> Em ambientes reais, o valor exato do `RelativePath` e do `SoapAction` depende do WSDL publicado pelo Host. O ajuste pode ser necessário para a rota exata do serviço exposto (por exemplo, `wsPageIndex`, `wsDataServer`, `wsDataServer/IwsDataServer` ou `wsReport`).
 
 ### 2) Guardar credencial criptografada
 
