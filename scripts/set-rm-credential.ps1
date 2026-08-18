@@ -8,6 +8,13 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+try {
+    [System.Security.Cryptography.ProtectedData] | Out-Null
+}
+catch {
+    Add-Type -AssemblyName System.Security
+}
+
 if (-not $ConfigFile) {
     $localConfig = Join-Path $PSScriptRoot 'rm.config.local.json'
     $defaultConfig = Join-Path $PSScriptRoot 'rm.config.json'

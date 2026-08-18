@@ -13,6 +13,13 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+try {
+    [System.Security.Cryptography.ProtectedData] | Out-Null
+}
+catch {
+    Add-Type -AssemblyName System.Security
+}
+
 function Resolve-PathFromBase {
     param(
         [string]$Path,
@@ -131,6 +138,12 @@ if ($RetryCount -eq 0) {
     $RetryCount = [int](Get-PropertyValue -Object $config -Name 'RetryCount' -Default 2)
 }
 
+$contentType = Get-PropertyValue -Object $config -Name 'ContentType' -Default 'text/xml; charset=utf-8'
+$soapAction = Get-PropertyValue -Object $config -Name 'SoapAction'
+if (-not $soapAction -and $Method -ne 'GET') {
+    $soapAction = 'http://www.totvs.com/IwsDataServer/ReadRecord'
+}
+
 if (-not [string]::IsNullOrWhiteSpace($RelativePath)) {
     $finalUrl = $serverUrl.TrimEnd('/') + '/' + $RelativePath.Trim('/')
 }
@@ -146,6 +159,12 @@ if ($rawHeaders) {
             $headers[$header.Name] = $header.Value
         }
     }
+}
+if (-not $headers.ContainsKey('Content-Type') -and -not $headers.ContainsKey('content-type')) {
+    $headers['Content-Type'] = $contentType
+}
+if ($soapAction) {
+    $headers['SOAPAction'] = $soapAction
 }
 
 $authConfig = Get-PropertyValue -Object $config -Name 'Authentication'
@@ -203,7 +222,7 @@ while ($attempt -le $RetryCount) {
             $response = Invoke-WebRequest -Uri $finalUrl -Method Get -Headers $headers -TimeoutSec $TimeoutSeconds
         }
         else {
-            $response = Invoke-WebRequest -Uri $finalUrl -Method $Method -Headers $headers -Body $Body -TimeoutSec $TimeoutSeconds
+            $response = Invoke-WebRequest -Uri $finalUrl -Method $Method -Headers $headers -Body $Body -ContentType $contentType -TimeoutSec $TimeoutSeconds
         }
 
         $stopwatch.Stop()
