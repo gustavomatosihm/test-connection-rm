@@ -1,0 +1,8 @@
+# Local-only configuration and credentials
+scripts/*.local.json
+scripts/*.credentials.json
+scripts/*.secret.json
+
+# Optional local diagnostics output
+samples/*.log
+samples/*.txt

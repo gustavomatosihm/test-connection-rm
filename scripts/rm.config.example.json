@@ -1,0 +1,17 @@
+{
+  "ApplicationServerUrl": "http://servidor-aplicacao:8054",
+  "DataServer": "PrjIsmData",
+  "HttpMethod": "GET",
+  "RelativePath": "",
+  "TimeoutSeconds": 30,
+  "RetryCount": 2,
+  "Headers": [
+    { "Name": "Accept", "Value": "application/json" }
+  ],
+  "Authentication": {
+    "Type": "Basic",
+    "Username": "usuario",
+    "CredentialFile": ".\\rm.credentials.json"
+  },
+  "RequestBody": ""
+}
