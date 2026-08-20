@@ -74,6 +74,41 @@ function Get-PropertyValue {
 
     return $Default
 }
+
+function Write-RmErrorLog {
+    param(
+        [string]$Operation,
+        [string]$Url,
+        [string]$Message,
+        [string]$ResponseBody = '',
+        [string]$StatusCode = ''
+    )
+
+    $logDir = Join-Path $PSScriptRoot '..\docs\logs'
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+    $logPath = Join-Path $logDir 'rm-errors.log'
+
+    $timestamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fffK'
+    $entry = @(
+        "[$timestamp]",
+        "Operation: $Operation",
+        "Url: $Url",
+        "StatusCode: $StatusCode",
+        "Message: $Message",
+        "ResponseBody:"
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($ResponseBody)) {
+        $entry += $ResponseBody
+    }
+    else {
+        $entry += '(empty)'
+    }
+
+    $entryText = ($entry -join [Environment]::NewLine) + [Environment]::NewLine + ('-' * 80) + [Environment]::NewLine
+    Add-Content -Path $logPath -Value $entryText -Encoding UTF8
+}
+
 function Escape-XmlValue {
     param([string]$Value)
     return [System.Security.SecurityElement]::Escape($Value)
@@ -331,6 +366,24 @@ while ($attempt -le $RetryCount) {
     }
     catch {
         $lastError = $_
+        $responseBody = ''
+        $statusCode = ''
+
+        if ($lastError.Exception -and $lastError.Exception.Response) {
+            try {
+                $stream = $lastError.Exception.Response.GetResponseStream()
+                if ($stream) {
+                    $reader = New-Object System.IO.StreamReader($stream)
+                    $responseBody = $reader.ReadToEnd()
+                    $reader.Dispose()
+                }
+                $statusCode = [string]$lastError.Exception.Response.StatusCode
+            }
+            catch {}
+        }
+
+        Write-RmErrorLog -Operation $Operation -Url $finalUrl -Message $lastError.Exception.Message -ResponseBody $responseBody -StatusCode $statusCode
+
         if ($attempt -le $RetryCount) {
             Write-Warning "Tentativa $attempt/$($RetryCount + 1) falhou. Repetindo em 2 segundos..."
             Start-Sleep -Seconds 2
