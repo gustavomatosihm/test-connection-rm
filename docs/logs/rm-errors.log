@@ -1,0 +1,4 @@
+﻿[2026-08-18T00:00:00Z] Log file initialized.
+This file is appended by scripts/test-rm-dataserver.ps1 when a SOAP request fails.
+------------------------------------------------------------
+

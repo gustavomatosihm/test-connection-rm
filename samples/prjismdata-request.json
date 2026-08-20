@@ -1,0 +1,10 @@
+{
+  "dataserver": "PrjIsmData",
+  "method": "GET",
+  "resource": "",
+  "query": "SELECT TOP 10 * FROM SYSTEM",
+  "filters": {
+    "companyId": 1
+  },
+  "notes": "Arquivo de exemplo para testes de conectividade do RM Dataserver. Ajuste a rota e o payload conforme o serviço exposto no servidor de aplicação."
+}

@@ -1,0 +1,10 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://www.totvs.com/">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tem:ReadRecord>
+      <tem:DataServerName>PrjIsmData</tem:DataServerName>
+      <tem:PrimaryKey>CHAVE_DO_REGISTRO</tem:PrimaryKey>
+      <tem:Contexto></tem:Contexto>
+    </tem:ReadRecord>
+  </soapenv:Body>
+</soapenv:Envelope>
