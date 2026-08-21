@@ -15,12 +15,24 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-try {
-    [System.Security.Cryptography.ProtectedData] | Out-Null
+function Initialize-ProtectedDataSupport {
+    try {
+        [System.Security.Cryptography.ProtectedData] | Out-Null
+        return $true
+    }
+    catch {
+        try {
+            Add-Type -AssemblyName System.Security
+            [System.Security.Cryptography.ProtectedData] | Out-Null
+            return $true
+        }
+        catch {
+            return $false
+        }
+    }
 }
-catch {
-    Add-Type -AssemblyName System.Security
-}
+
+$script:ProtectedDataSupported = Initialize-ProtectedDataSupport
 
 function Resolve-PathFromBase {
     param(
@@ -49,9 +61,15 @@ function Get-CredentialFromFile {
     }
 
     $payload = Get-Content -Raw -Path $CredentialPath | ConvertFrom-Json
-    $encryptedBytes = [Convert]::FromBase64String($payload.PasswordProtected)
-    $decryptedBytes = [System.Security.Cryptography.ProtectedData]::Unprotect($encryptedBytes, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
-    $plainPassword = [System.Text.Encoding]::UTF8.GetString($decryptedBytes)
+    $plainPassword = $payload.Password
+    if (-not $plainPassword -and $payload.PasswordProtected -and $script:ProtectedDataSupported) {
+        $encryptedBytes = [Convert]::FromBase64String($payload.PasswordProtected)
+        $decryptedBytes = [System.Security.Cryptography.ProtectedData]::Unprotect($encryptedBytes, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
+        $plainPassword = [System.Text.Encoding]::UTF8.GetString($decryptedBytes)
+    }
+    if (-not $plainPassword) {
+        throw 'Credencial inválida: senha ausente.'
+    }
 
     $securePassword = ConvertTo-SecureString -String $plainPassword -AsPlainText -Force
     return [System.Management.Automation.PSCredential]::new($payload.Username, $securePassword)
@@ -393,5 +411,3 @@ while ($attempt -le $RetryCount) {
         throw "Falha ao consultar Dataserver RM. Url: $finalUrl. Detalhes: $($lastError.Exception.Message)"
     }
 }
-
-
