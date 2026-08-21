@@ -3,11 +3,16 @@ param(
     [string]$ReadConfigFile = "",
     [string]$CreateConfigFile = "",
     [string]$DeleteConfigFile = "",
-    [string]$LogFile = ""
+    [string]$LogFile = "",
+    [string]$ErrorLogFile = "",
+    [int]$RetryCount = 2,
+    [int]$RetryDelaySeconds = 2
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
 $scriptDir = $PSScriptRoot
 
@@ -60,8 +65,31 @@ function Invoke-RmWebRequest {
     $headers['Authorization'] = 'Basic ' + [Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($pair))
 
     $body = if ($OverrideBody) { $OverrideBody } else { $cfg.RequestBody }
-    $response = Invoke-WebRequest -Uri $url -Method Post -Headers $headers -Body $body -ContentType $cfg.ContentType -TimeoutSec $cfg.TimeoutSeconds
-    return $response.Content
+
+    $maxAttempts = $RetryCount + 1
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        try {
+            $response = Invoke-WebRequest -Uri $url -Method Post -Headers $headers -Body $body -ContentType $cfg.ContentType -TimeoutSec $cfg.TimeoutSeconds
+            if ($attempt -gt 1) {
+                $msg = "attempt=$attempt url=$url"
+                Write-LogEntry -Path $ErrorLogFile -Title 'RETRY_RECOVERED' -Body $msg
+            }
+            return $response.Content
+        } catch [System.Net.WebException] {
+            $statusCode = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
+            $errMsg = "HTTP_ERROR status=$statusCode url=$url msg=$($_.Exception.Message)"
+        } catch {
+            $errMsg = "CONNECTION_ERROR url=$url msg=$($_.Exception.Message)"
+        }
+
+        Write-LogEntry -Path $ErrorLogFile -Title "RETRY" -Body "attempt=$attempt/$maxAttempts $errMsg"
+
+        if ($attempt -lt $maxAttempts) {
+            Start-Sleep -Seconds $RetryDelaySeconds
+        }
+    }
+
+    throw [System.Exception]::new($errMsg)
 }
 
 function New-RuntimeConfig {
@@ -93,6 +121,7 @@ if (-not $ReadConfigFile) { $ReadConfigFile = Join-Path $scriptDir 'rm.config.re
 if (-not $CreateConfigFile) { $CreateConfigFile = Join-Path $scriptDir 'rm.config.create.json' }
 if (-not $DeleteConfigFile) { $DeleteConfigFile = Join-Path $scriptDir 'rm.config.delete.json' }
 if (-not $LogFile) { $LogFile = Join-Path $scriptDir 'rm-crud-validation.log' }
+if (-not $ErrorLogFile) { $ErrorLogFile = Join-Path $scriptDir 'rm-crud-errors.log' }
 
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $tempCreate = Join-Path $scriptDir 'rm.config.create.runtime.json'
@@ -152,8 +181,11 @@ try {
         throw 'A validação da exclusão falhou.'
     }
 
-    Write-Host 'CRUD executado com validação por ReadRecord.'
-}
-finally {
+    [Console]::WriteLine('CRUD executado com sucesso (validado por ReadRecord).')
+} catch {
+    Write-LogEntry -Path $ErrorLogFile -Title 'CYCLE_ERROR' -Body $_.Exception.Message
+        [Console]::WriteLine("ERRO no ciclo: $($_.Exception.Message)")
+    throw
+} finally {
     Remove-Item -Path $tempCreate, $tempReadCreate, $tempReadUpdate, $tempDelete -Force -ErrorAction SilentlyContinue
 }
