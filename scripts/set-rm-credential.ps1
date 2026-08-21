@@ -8,13 +8,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-try {
-    [System.Security.Cryptography.ProtectedData] | Out-Null
-}
-catch {
-    Add-Type -AssemblyName System.Security
-}
-
 if (-not $ConfigFile) {
     $localConfig = Join-Path $PSScriptRoot 'rm.config.local.json'
     $defaultConfig = Join-Path $PSScriptRoot 'rm.config.json'
@@ -59,7 +52,6 @@ if (-not $targetUser) {
 
 Write-Host "Configurando credencial do Dataserver RM para usuario: $targetUser"
 $securePassword = Read-Host 'Informe a senha' -AsSecureString
-
 $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
 try {
     $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
@@ -73,11 +65,9 @@ if (-not (Test-Path $fileDirectory)) {
     New-Item -ItemType Directory -Path $fileDirectory -Force | Out-Null
 }
 
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($plainPassword)
-$protectedBytes = [System.Security.Cryptography.ProtectedData]::Protect($bytes, $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
 $payload = [ordered]@{
     Username = $targetUser
-    PasswordProtected = [Convert]::ToBase64String($protectedBytes)
+    Password = $plainPassword
 }
 
 $payload | ConvertTo-Json | Set-Content -Path $CredentialFile -Encoding UTF8

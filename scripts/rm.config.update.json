@@ -1,0 +1,19 @@
+{
+  "ApplicationServerUrl": "http://srvbhz16:8051",
+  "DataServer": "PrjIsmData",
+  "HttpMethod": "POST",
+  "RelativePath": "wsDataServer/IwsDataServer",
+  "TimeoutSeconds": 30,
+  "RetryCount": 2,
+  "SoapAction": "http://www.totvs.com/IwsDataServer/SaveRecord",
+  "ContentType": "text/xml; charset=utf-8",
+  "Headers": [
+    { "Name": "Accept", "Value": "text/xml" }
+  ],
+  "Authentication": {
+    "Type": "Basic",
+    "Username": "mestre",
+    "CredentialFile": ".\\rm.credentials.json"
+  },
+  "RequestBody": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:tem=\"http://www.totvs.com/\"><soap:Body><tem:SaveRecord><tem:DataServerName>PrjIsmData</tem:DataServerName><tem:XML><![CDATA[<PrjIsm><MIsm><CODCOLIGADA>1</CODCOLIGADA><IDPRJ>27056</IDPRJ><IDISM>4875985</IDISM><DESCISM>UPDATE-TESTE-20260821-175640</DESCISM></MIsm></PrjIsm>]]></tem:XML><tem:Contexto></tem:Contexto></tem:SaveRecord></soap:Body></soap:Envelope>"
+}

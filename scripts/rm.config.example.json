@@ -1,17 +1,19 @@
 {
   "ApplicationServerUrl": "http://servidor-aplicacao:8054",
   "DataServer": "PrjIsmData",
-  "HttpMethod": "GET",
-  "RelativePath": "",
+  "HttpMethod": "POST",
+  "RelativePath": "wsDataServer/IwsDataServer",
   "TimeoutSeconds": 30,
   "RetryCount": 2,
   "Headers": [
-    { "Name": "Accept", "Value": "application/json" }
+    { "Name": "Accept", "Value": "text/xml" }
   ],
+  "SoapAction": "http://www.totvs.com/IwsDataServer/ReadRecord",
+  "ContentType": "text/xml; charset=utf-8",
   "Authentication": {
     "Type": "Basic",
     "Username": "usuario",
     "CredentialFile": ".\\rm.credentials.json"
   },
-  "RequestBody": ""
+  "RequestBody": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:tem=\"http://www.totvs.com/\"><soap:Body><tem:ReadRecord><tem:DataServerName>PrjIsmData</tem:DataServerName><tem:PrimaryKey>CHAVE_DO_REGISTRO</tem:PrimaryKey><tem:Contexto></tem:Contexto></tem:ReadRecord></soap:Body></soap:Envelope>"
 }

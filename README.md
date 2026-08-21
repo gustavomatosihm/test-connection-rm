@@ -40,17 +40,20 @@ Ajuste `scripts/rm.config.json` ou crie `scripts/rm.config.local.json` com a URL
   "ApplicationServerUrl": "http://srvbhz16:8051",
   "DataServer": "PrjIsmData",
   "HttpMethod": "POST",
-  "RelativePath": "wsDataServer",
+  "RelativePath": "wsDataServer/IwsDataServer",
   "TimeoutSeconds": 30,
   "RetryCount": 2,
-  "SoapAction": "",
+  "SoapAction": "http://www.totvs.com/IwsDataServer/ReadRecord",
   "ContentType": "text/xml; charset=utf-8",
+  "Headers": [
+    { "Name": "Accept", "Value": "text/xml" }
+  ],
   "Authentication": {
     "Type": "Basic",
     "Username": "CHANGE_ME",
     "CredentialFile": ".\\rm.credentials.json"
   },
-  "RequestBody": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:tem=\"http://www.totvs.com/\"><soap:Body><tem:ReadRecord><tem:DataServerName>PrjIsmData</tem:DataServerName><tem:PrimaryKey>CHAVE_DO_REGISTRO</tem:PrimaryKey><tem:Contexto></tem:Contexto></tem:ReadRecord></soap:Body></soap:Envelope>"
+  "RequestBody": "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:tem=\"http://www.totvs.com/\"><soap:Body><tem:SaveRecord><tem:DataServerName>PrjIsmData</tem:DataServerName><tem:XML><![CDATA[<PrjIsm>...payload de update...</PrjIsm>]]></tem:XML><tem:Contexto></tem:Contexto></tem:SaveRecord></soap:Body></soap:Envelope>"
 }
 ```
 
