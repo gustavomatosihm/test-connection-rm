@@ -117,19 +117,20 @@ function Write-LogEntry {
     Add-Content -Path $Path -Value $entry -Encoding UTF8
 }
 
-if (-not $ReadConfigFile) { $ReadConfigFile = Join-Path $scriptDir 'rm.config.read.json' }
-if (-not $CreateConfigFile) { $CreateConfigFile = Join-Path $scriptDir 'rm.config.create.json' }
-if (-not $DeleteConfigFile) { $DeleteConfigFile = Join-Path $scriptDir 'rm.config.delete.json' }
-if (-not $LogFile) { $LogFile = Join-Path $scriptDir 'rm-crud-validation.log' }
-if (-not $ErrorLogFile) { $ErrorLogFile = Join-Path $scriptDir 'rm-crud-errors.log' }
+if (-not $ReadConfigFile) { $ReadConfigFile = Join-Path $scriptDir 'config\rm.config.read.json' }
+if (-not $CreateConfigFile) { $CreateConfigFile = Join-Path $scriptDir 'config\rm.config.create.json' }
+if (-not $DeleteConfigFile) { $DeleteConfigFile = Join-Path $scriptDir 'config\rm.config.delete.json' }
+if (-not $LogFile) { $LogFile = Join-Path $scriptDir 'logs\rm-crud-validation.log' }
+if (-not $ErrorLogFile) { $ErrorLogFile = Join-Path $scriptDir 'logs\rm-crud-errors.log' }
 
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $jobId = [System.Guid]::NewGuid().ToString('N').Substring(0, 8)
 $uniqueStamp = (Get-Date -Format 'yyyyMMdd-HHmmssfff') + $jobId.Substring(0,4)
-$tempCreate     = Join-Path $scriptDir "rm.config.create.runtime-$jobId.json"
-$tempReadCreate = Join-Path $scriptDir "rm.config.read-create.runtime-$jobId.json"
-$tempReadUpdate = Join-Path $scriptDir "rm.config.read-update.runtime-$jobId.json"
-$tempDelete     = Join-Path $scriptDir "rm.config.delete.runtime-$jobId.json"
+$runtimeDir     = Join-Path $scriptDir 'config'
+$tempCreate     = Join-Path $runtimeDir "rm.config.create.runtime-$jobId.json"
+$tempReadCreate = Join-Path $runtimeDir "rm.config.read-create.runtime-$jobId.json"
+$tempReadUpdate = Join-Path $runtimeDir "rm.config.read-update.runtime-$jobId.json"
+$tempDelete     = Join-Path $runtimeDir "rm.config.delete.runtime-$jobId.json"
 
 try {
     New-RuntimeConfig -SourceFile $CreateConfigFile -DestinationFile $tempCreate -Mutator {

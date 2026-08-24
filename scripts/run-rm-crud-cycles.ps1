@@ -5,11 +5,13 @@ param(
 )
 
 $scriptDir = $PSScriptRoot
-$logFile = Join-Path $scriptDir 'rm-crud-validation.log'
-$errorLogFile = Join-Path $scriptDir 'rm-crud-errors.log'
+$configDir = Join-Path $scriptDir 'config'
+$logDir    = Join-Path $scriptDir 'logs'
+$logFile      = Join-Path $logDir 'rm-crud-validation.log'
+$errorLogFile = Join-Path $logDir 'rm-crud-errors.log'
 
 # Atualizar configs operacionais a partir de rm.config.json
-& (Join-Path $scriptDir 'sync-rm-configs.ps1')
+& (Join-Path $scriptDir 'lib\sync-rm-configs.ps1')
 
 # Garante UTF-8 no console do processo atual e nos processos filhos
 if ([Console]::OutputEncoding.CodePage -ne 65001) {
@@ -40,8 +42,8 @@ if ($Parallel -le 1) {
     $jobs = @()
 
     for ($i = 1; $i -le $Cycles; $i++) {
-        $jobLogFile    = Join-Path $scriptDir "rm-crud-validation-job-$i.log"
-        $jobErrorFile  = Join-Path $scriptDir "rm-crud-errors-job-$i.log"
+        $jobLogFile    = Join-Path $logDir "rm-crud-validation-job-$i.log"
+        $jobErrorFile  = Join-Path $logDir "rm-crud-errors-job-$i.log"
         $cycleNum      = $i
         $testScript    = Join-Path $scriptDir 'test-rm-crud.ps1'
 

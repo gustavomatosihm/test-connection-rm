@@ -5,7 +5,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $scriptDir = $PSScriptRoot
-$baseConfigFile = Join-Path $scriptDir 'rm.config.json'
+$configDir = Join-Path (Split-Path $scriptDir -Parent) 'config'
+$baseConfigFile = Join-Path $configDir 'rm.config.json'
 
 if (-not (Test-Path $baseConfigFile)) {
     Write-Host "Warning: rm.config.json not found. Skipping config update."
@@ -29,7 +30,7 @@ Write-Host "Updating operation configs with URL: $baseUrl"
     'rm.config.delete.json',
     'rm.config.save.json'
 ) | ForEach-Object {
-    $configFile = Join-Path $scriptDir $_
+    $configFile = Join-Path $configDir $_
     if (Test-Path $configFile) {
         $cfg = Get-Content -Raw -Path $configFile | ConvertFrom-Json
         $cfg.ApplicationServerUrl = $baseUrl
