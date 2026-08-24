@@ -1,5 +1,5 @@
-{
-    "ApplicationServerUrl":  "http://srvbhz16:8051",
+﻿{
+    "ApplicationServerUrl":  "http://srvbhz86:8051",
     "DataServer":  "PrjIsmData",
     "HttpMethod":  "POST",
     "RelativePath":  "wsDataServer/IwsDataServer",

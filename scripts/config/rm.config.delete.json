@@ -1,0 +1,22 @@
+﻿{
+    "ApplicationServerUrl":  "http://srvbhz86:8051",
+    "DataServer":  "PrjIsmData",
+    "HttpMethod":  "POST",
+    "RelativePath":  "wsDataServer/IwsDataServer",
+    "TimeoutSeconds":  30,
+    "RetryCount":  2,
+    "SoapAction":  "http://www.totvs.com/IwsDataServer/DeleteRecordByKey",
+    "ContentType":  "text/xml; charset=utf-8",
+    "Headers":  [
+                    {
+                        "Name":  "Accept",
+                        "Value":  "text/xml"
+                    }
+                ],
+    "Authentication":  {
+                           "Type":  "Basic",
+                           "Username":  "mestre",
+                           "CredentialFile":  ".\\rm.credentials.json"
+                       },
+    "RequestBody":  "\u003csoap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:tem=\"http://www.totvs.com/\"\u003e\u003csoap:Body\u003e\u003ctem:DeleteRecordByKey\u003e\u003ctem:DataServerName\u003ePrjIsmData\u003c/tem:DataServerName\u003e\u003ctem:PrimaryKey\u003e1;27056;6744059\u003c/tem:PrimaryKey\u003e\u003ctem:Contexto\u003e\u003c/tem:Contexto\u003e\u003c/tem:DeleteRecordByKey\u003e\u003c/soap:Body\u003e\u003c/soap:Envelope\u003e"
+}

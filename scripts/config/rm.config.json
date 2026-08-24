@@ -1,0 +1,18 @@
+{
+  "Connection": {
+    "Url": "http://srvbhz86:8051"
+  },
+  "DataServer": "PrjIsmData",
+  "RelativePath": "wsDataServer/IwsDataServer",
+  "TimeoutSeconds": 30,
+  "RetryCount": 2,
+  "ContentType": "text/xml; charset=utf-8",
+  "Headers": [
+    { "Name": "Accept", "Value": "text/xml" }
+  ],
+  "Authentication": {
+    "Type": "Basic",
+    "Username": "mestre",
+    "CredentialFile": ".\\rm.credentials.json"
+  }
+}

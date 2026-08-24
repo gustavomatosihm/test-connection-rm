@@ -117,22 +117,25 @@ function Write-LogEntry {
     Add-Content -Path $Path -Value $entry -Encoding UTF8
 }
 
-if (-not $ReadConfigFile) { $ReadConfigFile = Join-Path $scriptDir 'rm.config.read.json' }
-if (-not $CreateConfigFile) { $CreateConfigFile = Join-Path $scriptDir 'rm.config.create.json' }
-if (-not $DeleteConfigFile) { $DeleteConfigFile = Join-Path $scriptDir 'rm.config.delete.json' }
-if (-not $LogFile) { $LogFile = Join-Path $scriptDir 'rm-crud-validation.log' }
-if (-not $ErrorLogFile) { $ErrorLogFile = Join-Path $scriptDir 'rm-crud-errors.log' }
+if (-not $ReadConfigFile) { $ReadConfigFile = Join-Path $scriptDir 'config\rm.config.read.json' }
+if (-not $CreateConfigFile) { $CreateConfigFile = Join-Path $scriptDir 'config\rm.config.create.json' }
+if (-not $DeleteConfigFile) { $DeleteConfigFile = Join-Path $scriptDir 'config\rm.config.delete.json' }
+if (-not $LogFile) { $LogFile = Join-Path $scriptDir 'logs\rm-crud-validation.log' }
+if (-not $ErrorLogFile) { $ErrorLogFile = Join-Path $scriptDir 'logs\rm-crud-errors.log' }
 
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$tempCreate = Join-Path $scriptDir 'rm.config.create.runtime.json'
-$tempReadCreate = Join-Path $scriptDir 'rm.config.read-create.runtime.json'
-$tempReadUpdate = Join-Path $scriptDir 'rm.config.read-update.runtime.json'
-$tempDelete = Join-Path $scriptDir 'rm.config.delete.runtime.json'
+$jobId = [System.Guid]::NewGuid().ToString('N').Substring(0, 8)
+$uniqueStamp = (Get-Date -Format 'yyyyMMdd-HHmmssfff') + $jobId.Substring(0,4)
+$runtimeDir     = Join-Path $scriptDir 'config'
+$tempCreate     = Join-Path $runtimeDir "rm.config.create.runtime-$jobId.json"
+$tempReadCreate = Join-Path $runtimeDir "rm.config.read-create.runtime-$jobId.json"
+$tempReadUpdate = Join-Path $runtimeDir "rm.config.read-update.runtime-$jobId.json"
+$tempDelete     = Join-Path $runtimeDir "rm.config.delete.runtime-$jobId.json"
 
 try {
     New-RuntimeConfig -SourceFile $CreateConfigFile -DestinationFile $tempCreate -Mutator {
         param($cfg)
-        $cfg.RequestBody = $cfg.RequestBody -replace 'TESTE-\d{8}-\d{6}', "TESTE-$stamp"
+        $cfg.RequestBody = $cfg.RequestBody -replace 'TESTE-\d{8}-\d{6,17}', "TESTE-$uniqueStamp"
     }
     $createContent = Invoke-RmWebRequest -ConfigFile $tempCreate
     $createKey = Extract-TagValue -Content $createContent -TagName 'SaveRecordResult'

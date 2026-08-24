@@ -217,8 +217,8 @@ function Get-DefaultSoapAction {
 }
 
 if (-not $ConfigFile) {
-    $localConfig = Join-Path $PSScriptRoot 'rm.config.local.json'
-    $defaultConfig = Join-Path $PSScriptRoot 'rm.config.json'
+    $localConfig   = Join-Path $PSScriptRoot 'config\rm.config.local.json'
+    $defaultConfig = Join-Path $PSScriptRoot 'config\rm.config.json'
     if (Test-Path $localConfig) {
         $ConfigFile = $localConfig
     }
@@ -226,7 +226,7 @@ if (-not $ConfigFile) {
         $ConfigFile = $defaultConfig
     }
     else {
-        throw 'Arquivo de configuração não encontrado. Crie rm.config.json ou rm.config.local.json.'
+        throw 'Arquivo de configuração não encontrado. Crie config\rm.config.json ou config\rm.config.local.json.'
     }
 }
 
@@ -242,8 +242,8 @@ if (-not $CredentialFile) {
     if ($config.Authentication -and $config.Authentication.CredentialFile) {
         $CredentialFile = Resolve-PathFromBase -Path $config.Authentication.CredentialFile -BasePath (Split-Path -Parent $ConfigFile)
     }
-    elseif (Test-Path (Join-Path $PSScriptRoot 'rm.credentials.json')) {
-        $CredentialFile = Join-Path $PSScriptRoot 'rm.credentials.json'
+    elseif (Test-Path (Join-Path $PSScriptRoot 'config\rm.credentials.json')) {
+        $CredentialFile = Join-Path $PSScriptRoot 'config\rm.credentials.json'
     }
 }
 

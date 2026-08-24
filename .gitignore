@@ -2,6 +2,12 @@
 scripts/*.local.json
 scripts/*.credentials.json
 scripts/*.secret.json
+scripts/config/*.local.json
+scripts/config/*.credentials.json
+scripts/config/*.secret.json
+
+# Runtime temp configs
+scripts/config/*.runtime-*.json
 
 # Optional local diagnostics output
 samples/*.log
