@@ -1,0 +1,22 @@
+﻿{
+    "ApplicationServerUrl":  "http://srvbhz86:8051",
+    "DataServer":  "PrjIsmData",
+    "HttpMethod":  "POST",
+    "RelativePath":  "wsDataServer/IwsDataServer",
+    "TimeoutSeconds":  30,
+    "RetryCount":  2,
+    "SoapAction":  "http://www.totvs.com/IwsDataServer/SaveRecord",
+    "ContentType":  "text/xml; charset=utf-8",
+    "Headers":  [
+                    {
+                        "Name":  "Accept",
+                        "Value":  "text/xml"
+                    }
+                ],
+    "Authentication":  {
+                           "Type":  "Basic",
+                           "Username":  "mestre",
+                           "CredentialFile":  ".\\rm.credentials.json"
+                       },
+    "RequestBody":  "\u003csoap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:tem=\"http://www.totvs.com/\"\u003e\u003csoap:Body\u003e\u003ctem:SaveRecord\u003e\u003ctem:DataServerName\u003ePrjIsmData\u003c/tem:DataServerName\u003e\u003ctem:XML\u003e\u003c![CDATA[\u003cPrjIsm\u003e\u003cMIsm\u003e\u003cCODCOLIGADA\u003e1\u003c/CODCOLIGADA\u003e\u003cIDPRJ\u003e27056\u003c/IDPRJ\u003e\u003cIDISM\u003e4875985\u003c/IDISM\u003e\u003cDESCISM\u003eUPDATE-TESTE-20260821-175640\u003c/DESCISM\u003e\u003c/MIsm\u003e\u003c/PrjIsm\u003e]]\u003e\u003c/tem:XML\u003e\u003ctem:Contexto\u003e\u003c/tem:Contexto\u003e\u003c/tem:SaveRecord\u003e\u003c/soap:Body\u003e\u003c/soap:Envelope\u003e"
+}

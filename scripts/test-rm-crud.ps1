@@ -117,17 +117,11 @@ function Write-LogEntry {
     Add-Content -Path $Path -Value $entry -Encoding UTF8
 }
 
+if (-not $ReadConfigFile) { $ReadConfigFile = Join-Path $scriptDir 'rm.config.read.json' }
+if (-not $CreateConfigFile) { $CreateConfigFile = Join-Path $scriptDir 'rm.config.create.json' }
+if (-not $DeleteConfigFile) { $DeleteConfigFile = Join-Path $scriptDir 'rm.config.delete.json' }
 if (-not $LogFile) { $LogFile = Join-Path $scriptDir 'rm-crud-validation.log' }
 if (-not $ErrorLogFile) { $ErrorLogFile = Join-Path $scriptDir 'rm-crud-errors.log' }
-
-# Carrega operações de um arquivo centralizado
-. (Join-Path $scriptDir 'rm.config.operations.ps1')
-
-$baseConfigFile = Join-Path $scriptDir 'rm.config.json'
-if (-not (Test-Path $baseConfigFile)) {
-    throw "Arquivo de configuração não encontrado: $baseConfigFile"
-}
-$baseCfg = Get-Content -Raw -Path $baseConfigFile | ConvertFrom-Json
 
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $tempCreate = Join-Path $scriptDir 'rm.config.create.runtime.json'
@@ -136,16 +130,18 @@ $tempReadUpdate = Join-Path $scriptDir 'rm.config.read-update.runtime.json'
 $tempDelete = Join-Path $scriptDir 'rm.config.delete.runtime.json'
 
 try {
-    $createCfg = Build-OperationConfig -OperationType 'CREATE' -BaseConfig $baseCfg
-    $createCfg.RequestBody = $createCfg.RequestBody -replace 'TESTE-\d{8}-\d{6}', "TESTE-$stamp"
-    $createCfg | ConvertTo-Json -Depth 10 | Set-Content -Path $tempCreate -Encoding UTF8
+    New-RuntimeConfig -SourceFile $CreateConfigFile -DestinationFile $tempCreate -Mutator {
+        param($cfg)
+        $cfg.RequestBody = $cfg.RequestBody -replace 'TESTE-\d{8}-\d{6}', "TESTE-$stamp"
+    }
     $createContent = Invoke-RmWebRequest -ConfigFile $tempCreate
     $createKey = Extract-TagValue -Content $createContent -TagName 'SaveRecordResult'
     Write-LogEntry -Path $LogFile -Title 'CREATE' -Body $createKey
 
-    $readCfg = Build-OperationConfig -OperationType 'READ' -BaseConfig $baseCfg
-    $readCfg.RequestBody = $readCfg.RequestBody -replace '1;27056;4875985', $createKey
-    $readCfg | ConvertTo-Json -Depth 10 | Set-Content -Path $tempReadCreate -Encoding UTF8
+    New-RuntimeConfig -SourceFile $ReadConfigFile -DestinationFile $tempReadCreate -Mutator {
+        param($cfg)
+        $cfg.RequestBody = $cfg.RequestBody -replace '1;27056;4875985', $createKey
+    }
     $verifyCreateContent = Invoke-RmWebRequest -ConfigFile $tempReadCreate
     Write-LogEntry -Path $LogFile -Title 'READ AFTER CREATE' -Body ("IDISM=" + (Extract-ReadField -Content $verifyCreateContent -TagName 'IDISM'))
     if ((Extract-ReadField -Content $verifyCreateContent -TagName 'IDISM') -ne ($createKey.Split(';')[-1])) {
@@ -156,10 +152,7 @@ try {
     $previousDescription = Extract-ReadField -Content $verifyCreateContent -TagName 'DESCISM'
     $updateDescription = "UPDATE-TESTE-$updateStamp"
     $updateBody = Build-UpdateBody -ReadXml $verifyCreateContent -NewDescription $updateDescription
-    $updateCfg = Build-OperationConfig -OperationType 'CREATE' -BaseConfig $baseCfg
-    $updateCfg.SoapAction = 'http://www.totvs.com/IwsDataServer/SaveRecord'
-    $updateCfg.RequestBody = $updateBody
-    $updateContent = Invoke-RmWebRequest -ConfigFile $tempReadUpdate -OverrideSoapAction 'http://www.totvs.com/IwsDataServer/SaveRecord' -OverrideBody $updateBody
+    $updateContent = Invoke-RmWebRequest -ConfigFile $ReadConfigFile -OverrideSoapAction 'http://www.totvs.com/IwsDataServer/SaveRecord' -OverrideBody $updateBody
     Write-LogEntry -Path $LogFile -Title 'UPDATE' -Body ("FROM=" + $previousDescription + " TO=" + $updateDescription)
     if ($updateContent -notlike "*$createKey*") {
         throw "A atualização retornou chave diferente. Esperado: $createKey. Obtido: $updateContent"

@@ -7,6 +7,9 @@ $scriptDir = $PSScriptRoot
 $logFile = Join-Path $scriptDir 'rm-crud-validation.log'
 $errorLogFile = Join-Path $scriptDir 'rm-crud-errors.log'
 
+# Atualizar configs operacionais a partir de rm.config.json
+& (Join-Path $scriptDir 'sync-rm-configs.ps1')
+
 # Garante UTF-8 no console do processo atual e nos processos filhos
 if ([Console]::OutputEncoding.CodePage -ne 65001) {
     & cmd /c chcp 65001 | Out-Null
