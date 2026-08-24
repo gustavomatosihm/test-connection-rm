@@ -123,6 +123,46 @@ if (-not $DeleteConfigFile) { $DeleteConfigFile = Join-Path $scriptDir 'rm.confi
 if (-not $LogFile) { $LogFile = Join-Path $scriptDir 'rm-crud-validation.log' }
 if (-not $ErrorLogFile) { $ErrorLogFile = Join-Path $scriptDir 'rm-crud-errors.log' }
 
+# Se os arquivos de config não existem, gera dinamicamente a partir de rm.config.json
+$baseConfigFile = Join-Path $scriptDir 'rm.config.json'
+if ((Test-Path $baseConfigFile) -and -not (Test-Path $ReadConfigFile)) {
+    $baseCfg = Get-Content -Raw -Path $baseConfigFile | ConvertFrom-Json
+    if ($baseCfg.Connection.Url -and $baseCfg.Connection.Url -ne '') {
+        Write-Host "Gerando configs operacionais a partir de rm.config.json..."
+        
+        @(
+            @{ File = $CreateConfigFile; SoapAction = 'http://www.totvs.com/IwsDataServer/SaveRecord' },
+            @{ File = $ReadConfigFile; SoapAction = 'http://www.totvs.com/IwsDataServer/ReadRecord' },
+            @{ File = $DeleteConfigFile; SoapAction = 'http://www.totvs.com/IwsDataServer/DeleteRecordByKey' }
+        ) | ForEach-Object {
+            $url = $baseCfg.Connection.Url
+            $protocol = if ($url -match '^https?://([^/]+)') { $Matches[0] } else { $url }
+            
+            $operCfg = @{
+                ApplicationServerUrl = $protocol
+                DataServer = $baseCfg.DataServer
+                HttpMethod = 'POST'
+                RelativePath = $baseCfg.RelativePath
+                TimeoutSeconds = $baseCfg.TimeoutSeconds
+                RetryCount = $baseCfg.RetryCount
+                SoapAction = $_.SoapAction
+                ContentType = 'text/xml; charset=utf-8'
+                Headers = @( @{ Name = 'Accept'; Value = 'text/xml' } )
+                Authentication = $baseCfg.Authentication
+            }
+            if ($_.File -eq $CreateConfigFile) {
+                $operCfg | Add-Member -NotePropertyName 'RequestBody' -NotePropertyValue (Get-Content -Raw (Join-Path $scriptDir 'rm.config.create.json') | ConvertFrom-Json).RequestBody
+            } elseif ($_.File -eq $ReadConfigFile) {
+                $operCfg | Add-Member -NotePropertyName 'RequestBody' -NotePropertyValue (Get-Content -Raw (Join-Path $scriptDir 'rm.config.read.json') | ConvertFrom-Json).RequestBody
+            } else {
+                $operCfg | Add-Member -NotePropertyName 'RequestBody' -NotePropertyValue (Get-Content -Raw (Join-Path $scriptDir 'rm.config.delete.json') | ConvertFrom-Json).RequestBody
+            }
+            
+            $operCfg | ConvertTo-Json -Depth 10 | Set-Content -Path $_.File -Encoding UTF8
+        }
+    }
+}
+
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $tempCreate = Join-Path $scriptDir 'rm.config.create.runtime.json'
 $tempReadCreate = Join-Path $scriptDir 'rm.config.read-create.runtime.json'
